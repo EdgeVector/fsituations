@@ -11,6 +11,35 @@ It fills the gap between F-Brain and F-Kanban:
 - F-Situations stores current shared reality that agents must respect before
   mutating shared systems.
 
+## Agent contract
+
+Agents should check F-Situations before starting work:
+
+```bash
+fsituations list --json
+```
+
+If the CLI is not installed but this checkout is available:
+
+```bash
+bun --cwd /Users/tomtang/code/edgevector/fsituations run src/cli.ts list --json
+```
+
+If F-Situations is not initialized, agents may continue read-only local
+inspection, but must not mutate shared systems until the Situation check
+succeeds or Tom explicitly clears the action. Shared-system mutations include
+CI changes, routine or automation restarts, deployment/release-gate changes, PR
+merge settings, and production/shared infrastructure changes.
+
+Before a shared-system mutation, run a scoped preflight:
+
+```bash
+fsituations preflight --action enable-ci --repo EdgeVector/fold
+```
+
+If preflight blocks the action or requires human clearance, stop and cite the
+Situation slug.
+
 ## Commands
 
 ```bash

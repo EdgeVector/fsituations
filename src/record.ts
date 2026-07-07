@@ -1,4 +1,4 @@
-import { FkanbanError, type NodeClient, type QueryRow } from "../../fkanban/src/client.ts";
+import { FsituationsError, type NodeClient, type QueryRow } from "./client.ts";
 import { schemaHashFor, type Config } from "./config.ts";
 import { fieldsFor, SEVERITY_VALUES, STATUS_VALUES, type Severity, type SituationStatus } from "./schemas.ts";
 
@@ -75,7 +75,7 @@ export function nowIso(): string {
 
 export function validateSlug(slug: string): void {
   if (!SLUG_RE.test(slug)) {
-    throw new FkanbanError({
+    throw new FsituationsError({
       code: "invalid_slug",
       message: `Invalid slug "${slug}".`,
       hint: "Use lowercase letters, digits, hyphens, and underscores; start with a letter or digit.",
@@ -257,7 +257,7 @@ export async function requireSituation(
 ): Promise<Situation> {
   const situation = await findSituation(node, cfg, slug);
   if (!situation) {
-    throw new FkanbanError({
+    throw new FsituationsError({
       code: "not_found",
       message: `Situation "${slug}" not found.`,
     });

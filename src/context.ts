@@ -1,4 +1,4 @@
-import { newNodeClient, type NodeClient, type Verbose } from "../../fkanban/src/client.ts";
+import { newNodeClient, type NodeClient, type Verbose } from "./client.ts";
 import { readConfig, resolveSocketPath, type Config } from "./config.ts";
 
 export type Ctx = {

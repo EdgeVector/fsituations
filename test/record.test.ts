@@ -8,7 +8,7 @@ import {
   rowToSituation,
   type Situation,
 } from "../src/record.ts";
-import type { QueryRow } from "../../fkanban/src/client.ts";
+import type { QueryRow } from "../src/client.ts";
 
 function baseSituation(overrides: Partial<Situation> = {}): Situation {
   return normalizeSituation({

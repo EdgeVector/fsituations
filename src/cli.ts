@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { readFileSync } from "node:fs";
 
 import pkg from "../package.json" with { type: "json" };
-import { FkanbanError, newNodeClient } from "../../fkanban/src/client.ts";
+import { FsituationsError, newNodeClient, type NodeClient } from "./client.ts";
 import {
   ConfigInvalidError,
   ConfigMissingError,
@@ -112,7 +112,7 @@ async function main(argv: string[]): Promise<number> {
     case "preflight":
       return await preflightCmd(rest);
     default:
-      throw new FkanbanError({
+      throw new FsituationsError({
         code: "unknown_command",
         message: `Unknown command "${command}".`,
         hint: "Run `fsituations help`.",
@@ -169,7 +169,7 @@ async function initCmd(rest: string[]): Promise<number> {
   });
   const identity = userHash ? { provisioned: true as const, userHash } : await node.autoIdentity();
   if (!identity.provisioned) {
-    throw new FkanbanError({
+    throw new FsituationsError({
       code: "missing_identity",
       message: "Could not resolve a LastDB user identity.",
       hint: "Pass --user-hash or provision the local node before running init.",
@@ -178,7 +178,7 @@ async function initCmd(rest: string[]): Promise<number> {
 
   const schemaHash = parsed.values["schema-hash"] ?? (await resolveLoadedSituationHash(node));
   if (!schemaHash) {
-    throw new FkanbanError({
+    throw new FsituationsError({
       code: "schema_not_loaded",
       message: "No loaded fsituations/Situation schema was found on the node.",
       hint: "Publish/load the schema from `fsituations schema --json`, or pass --schema-hash.",
@@ -199,7 +199,7 @@ async function initCmd(rest: string[]): Promise<number> {
   return 0;
 }
 
-async function resolveLoadedSituationHash(node: ReturnType<typeof newNodeClient>): Promise<string | null> {
+async function resolveLoadedSituationHash(node: NodeClient): Promise<string | null> {
   const loaded = await node.listSchemas();
   const candidates = loaded.filter(
     (schema) =>
@@ -228,7 +228,7 @@ async function putCmd(rest: string[]): Promise<number> {
   }
   const file = parsed.positionals[0];
   if (!file) {
-    throw new FkanbanError({
+    throw new FsituationsError({
       code: "missing_input",
       message: "Missing JSON file path.",
       hint: "Use `fsituations put <file>` or `fsituations put -` for stdin.",
@@ -287,7 +287,7 @@ async function showCmd(rest: string[]): Promise<number> {
     return 0;
   }
   const slug = parsed.positionals[0];
-  if (!slug) throw new FkanbanError({ code: "missing_slug", message: "Missing situation slug." });
+  if (!slug) throw new FsituationsError({ code: "missing_slug", message: "Missing situation slug." });
   const { cfg, node } = loadCtx({ configPath: parsed.values.config });
   const situation = await requireSituation(node, cfg, slug);
   console.log(parsed.values.json ? JSON.stringify(situation, null, 2) : renderSituation(situation));
@@ -316,7 +316,7 @@ async function preflightCmd(rest: string[]): Promise<number> {
   }
   const action = parsed.values.action;
   if (!action) {
-    throw new FkanbanError({
+    throw new FsituationsError({
       code: "missing_action",
       message: "Missing --action.",
       hint: "Example: fsituations preflight --action enable-ci --repo EdgeVector/fold",
@@ -401,13 +401,13 @@ main(Bun.argv.slice(2))
   .then((code) => process.exit(code))
   .catch((err) => {
     if (
-      err instanceof FkanbanError ||
+      err instanceof FsituationsError ||
       err instanceof ConfigMissingError ||
       err instanceof ConfigInvalidError
     ) {
       console.error(`fsituations: ${err.message}`);
-      if (err instanceof FkanbanError && err.hint) console.error(`hint: ${err.hint}`);
-      process.exit(err instanceof FkanbanError && err.code.startsWith("missing") ? 2 : 1);
+      if (err instanceof FsituationsError && err.hint) console.error(`hint: ${err.hint}`);
+      process.exit(err instanceof FsituationsError && err.code.startsWith("missing") ? 2 : 1);
     }
     console.error(err instanceof Error ? err.stack ?? err.message : String(err));
     process.exit(1);

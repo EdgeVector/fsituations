@@ -1,0 +1,143 @@
+export const OWNER_APP_ID = "fsituations";
+
+export function namespacedSchemaName(shortName: string): string {
+  return `${OWNER_APP_ID}/${shortName}`;
+}
+
+export type FieldType = "String" | { Array: "String" };
+
+export type SchemaDefinition = {
+  name: string;
+  owner_app_id: string;
+  descriptive_name: string;
+  purpose_statement?: string;
+  schema_type: "Hash";
+  key: { hash_field: string };
+  fields: string[];
+  field_types: Record<string, FieldType>;
+  field_descriptions: Record<string, string>;
+  field_classifications?: Record<string, string[]>;
+  field_data_classifications: Record<
+    string,
+    { sensitivity_level: number; data_domain: string }
+  >;
+};
+
+export type AddSchemaRequest = {
+  schema: SchemaDefinition;
+  mutation_mappers: Record<string, string>;
+};
+
+export const STATUS_VALUES = ["active", "monitoring", "resolved", "archived"] as const;
+export type SituationStatus = (typeof STATUS_VALUES)[number];
+
+export const SEVERITY_VALUES = ["p0", "p1", "p2", "p3"] as const;
+export type Severity = (typeof SEVERITY_VALUES)[number];
+
+export const SITUATION_FIELDS = [
+  "slug",
+  "title",
+  "summary",
+  "status",
+  "severity",
+  "scope_systems",
+  "scope_repos",
+  "scope_routines",
+  "scope_automations",
+  "current_phase",
+  "phases_json",
+  "blocked_actions",
+  "allowed_actions",
+  "requires_human_clearance",
+  "preflight_message",
+  "links_kanban",
+  "links_brain",
+  "owner",
+  "created_at",
+  "updated_at",
+  "expires_at",
+] as const;
+
+const ARRAY_FIELDS = [
+  "scope_systems",
+  "scope_repos",
+  "scope_routines",
+  "scope_automations",
+  "blocked_actions",
+  "allowed_actions",
+  "requires_human_clearance",
+  "links_kanban",
+  "links_brain",
+] as const;
+
+const GENERAL = { sensitivity_level: 0, data_domain: "general" };
+
+function fieldTypes(
+  fields: readonly string[],
+  arrayFields: readonly string[],
+): Record<string, FieldType> {
+  const arrays = new Set(arrayFields);
+  return Object.fromEntries(
+    fields.map((field) => [field, arrays.has(field) ? { Array: "String" } : "String"]),
+  ) as Record<string, FieldType>;
+}
+
+function generalClassifications(
+  fields: readonly string[],
+): SchemaDefinition["field_data_classifications"] {
+  return Object.fromEntries(fields.map((field) => [field, GENERAL]));
+}
+
+export const situationSchema: AddSchemaRequest = {
+  schema: {
+    name: "Situation",
+    owner_app_id: OWNER_APP_ID,
+    descriptive_name: "Situation",
+    purpose_statement:
+      "A current operational posture record with scope, phases, links, and agent-facing preflight policy",
+    schema_type: "Hash",
+    key: { hash_field: "slug" },
+    fields: [...SITUATION_FIELDS],
+    field_types: fieldTypes(SITUATION_FIELDS, ARRAY_FIELDS),
+    field_descriptions: {
+      slug: "stable url-style id",
+      title: "one-line situation name",
+      summary: "short current-state summary",
+      status: "active|monitoring|resolved|archived",
+      severity: "p0|p1|p2|p3",
+      scope_systems: "systems affected by the situation",
+      scope_repos: "owner/name repos affected by the situation",
+      scope_routines: "routine names affected by the situation",
+      scope_automations: "automation names affected by the situation",
+      current_phase: "active phase/set slug",
+      phases_json: "JSON array of phase records, each with slug/label/state/summary/policy",
+      blocked_actions: "agent actions blocked while this situation is active",
+      allowed_actions: "agent actions explicitly allowed while active",
+      requires_human_clearance: "actions requiring human clearance",
+      preflight_message: "message shown when an agent preflight is blocked",
+      links_kanban: "related fkanban card slugs",
+      links_brain: "related fbrain record slugs",
+      owner: "human or routine responsible for the situation",
+      created_at: "RFC 3339 timestamp",
+      updated_at: "RFC 3339 timestamp",
+      expires_at: "optional RFC 3339 expiry timestamp",
+    },
+    field_classifications: {
+      title: ["word"],
+      summary: ["word"],
+      preflight_message: ["word"],
+    },
+    field_data_classifications: generalClassifications(SITUATION_FIELDS),
+  },
+  mutation_mappers: {},
+};
+
+export const RECORD_TYPES = ["situation"] as const;
+export type RecordType = (typeof RECORD_TYPES)[number];
+
+export const UNIQUE_SCHEMAS = [{ key: "situation" as const, schema: situationSchema }];
+
+export function fieldsFor(type: RecordType): string[] {
+  if (type !== "situation") throw new Error(`Unknown record type: ${type}`);
+  return [...SITUATION_FIELDS];
+}

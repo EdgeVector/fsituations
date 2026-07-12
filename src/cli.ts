@@ -26,13 +26,13 @@ import {
 } from "./record.ts";
 import { OWNER_APP_ID, situationSchema } from "./schemas.ts";
 
-export const TOP_HELP = `fsituations — current operational posture over LastDB
+export const TOP_HELP = `situations — current operational posture over LastDB
 
 Usage:
-  fsituations <command> [options]
+  situations <command> [options]
 
 Commands:
-  init                 write ~/.fsituations/config.json from node/schema details
+  init                 write ~/.situations/config.json from node/schema details
   schema               print the Situation schema JSON for publishing/loading
   put <json-file|- >   create/update a situation from JSON
   list                 list active/current situations (--all, --json)
@@ -43,18 +43,20 @@ Commands:
 
 Common flags:
   --json               machine-readable output
-  --config <path>      config path (else $FSITUATIONS_CONFIG or ~/.fsituations/config.json)
+  --config <path>      config path (else $SITUATIONS_CONFIG, $FSITUATIONS_CONFIG, or ~/.situations/config.json)
 
 Examples:
-  fsituations schema
-  fsituations put examples/forge-ci-containment.json
-  fsituations preflight --file examples/forge-ci-containment.json --action enable-ci --repo EdgeVector/fold
-  fsituations preflight --action enable-ci --repo EdgeVector/fold --json`;
+  situations schema
+  situations put examples/forge-ci-containment.json
+  situations preflight --file examples/forge-ci-containment.json --action enable-ci --repo EdgeVector/fold
+  situations preflight --action enable-ci --repo EdgeVector/fold --json
+
+Compatibility: fsituations remains an alias during the migration.`;
 
 function usageFor(command: string): string {
   switch (command) {
     case "init":
-      return `fsituations init
+      return `situations init
 
 Options:
   --node-url <url>             node identity URL (default http://127.0.0.1:9001)
@@ -66,14 +68,14 @@ Options:
 
 If --schema-hash is omitted, init asks the node for loaded schemas and resolves
 the loaded fsituations/Situation schema. If missing, publish/load the schema
-printed by \`fsituations schema\`, then rerun init.`;
+printed by \`situations schema\`, then rerun init.`;
     case "put":
-      return `fsituations put <json-file|->
+      return `situations put <json-file|->
 
 Creates or updates one situation. The JSON keys mirror the Situation record:
 slug, title, status, severity, scope_repos, phases, blocked_actions, etc.`;
     case "preflight":
-      return `fsituations preflight --action <action> [scope]
+      return `situations preflight --action <action> [scope]
 
 Scope options:
   --repo <owner/name>
@@ -115,7 +117,7 @@ async function main(argv: string[]): Promise<number> {
       throw new FsituationsError({
         code: "unknown_command",
         message: `Unknown command "${command}".`,
-        hint: "Run `fsituations help`.",
+        hint: "Run `situations help`.",
       });
   }
 }
@@ -127,7 +129,7 @@ function schemaCmd(rest: string[]): number {
     allowPositionals: false,
   });
   if (parsed.values.help) {
-    console.log("fsituations schema -- print the Situation schema JSON");
+    console.log("situations schema -- print the Situation schema JSON");
     return 0;
   }
   if (parsed.values.json) {
@@ -181,7 +183,7 @@ async function initCmd(rest: string[]): Promise<number> {
     throw new FsituationsError({
       code: "schema_not_loaded",
       message: "No loaded fsituations/Situation schema was found on the node.",
-      hint: "Publish/load the schema from `fsituations schema --json`, or pass --schema-hash.",
+      hint: "Publish/load the schema from `situations schema --json`, or pass --schema-hash.",
     });
   }
 
@@ -231,7 +233,7 @@ async function putCmd(rest: string[]): Promise<number> {
     throw new FsituationsError({
       code: "missing_input",
       message: "Missing JSON file path.",
-      hint: "Use `fsituations put <file>` or `fsituations put -` for stdin.",
+      hint: "Use `situations put <file>` or `situations put -` for stdin.",
     });
   }
   const body = file === "-" ? await new Response(Bun.stdin.stream()).text() : readFileSync(file, "utf8");
@@ -258,7 +260,7 @@ async function listCmd(rest: string[]): Promise<number> {
     allowPositionals: false,
   });
   if (parsed.values.help) {
-    console.log("fsituations list [--all] [--json]");
+    console.log("situations list [--all] [--json]");
     return 0;
   }
   const { cfg, node } = loadCtx({ configPath: parsed.values.config });
@@ -283,7 +285,7 @@ async function showCmd(rest: string[]): Promise<number> {
     allowPositionals: true,
   });
   if (parsed.values.help) {
-    console.log("fsituations show <slug> [--json]");
+    console.log("situations show <slug> [--json]");
     return 0;
   }
   const slug = parsed.positionals[0];
@@ -319,7 +321,7 @@ async function preflightCmd(rest: string[]): Promise<number> {
     throw new FsituationsError({
       code: "missing_action",
       message: "Missing --action.",
-      hint: "Example: fsituations preflight --action enable-ci --repo EdgeVector/fold",
+      hint: "Example: situations preflight --action enable-ci --repo EdgeVector/fold",
     });
   }
   const situations = parsed.values.file
@@ -405,7 +407,7 @@ main(Bun.argv.slice(2))
       err instanceof ConfigMissingError ||
       err instanceof ConfigInvalidError
     ) {
-      console.error(`fsituations: ${err.message}`);
+      console.error(`situations: ${err.message}`);
       if (err instanceof FsituationsError && err.hint) console.error(`hint: ${err.hint}`);
       process.exit(err instanceof FsituationsError && err.code.startsWith("missing") ? 2 : 1);
     }

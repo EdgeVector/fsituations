@@ -2,10 +2,10 @@
 set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-source_bin="$repo_root/bin/fsituations"
+source_bin="$repo_root/bin/situations"
 
 if [ ! -x "$source_bin" ]; then
-  echo "fsituations shim source is not executable: $source_bin" >&2
+  echo "situations shim source is not executable: $source_bin" >&2
   exit 1
 fi
 
@@ -20,6 +20,8 @@ else
 fi
 
 mkdir -p "$install_bin"
+ln -sf "$source_bin" "$install_bin/situations"
 ln -sf "$source_bin" "$install_bin/fsituations"
 
-echo "Installed fsituations shim: $install_bin/fsituations -> $source_bin"
+echo "Installed situations shim: $install_bin/situations -> $source_bin"
+echo "Installed fsituations compatibility shim: $install_bin/fsituations -> $source_bin"

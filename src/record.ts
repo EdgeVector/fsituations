@@ -210,7 +210,7 @@ export function situationToFields(situation: Situation): Record<string, unknown>
 
 export function rowToSituation(row: QueryRow): Situation {
   const f = row.fields;
-  return normalizeSituation({
+  const situation = normalizeSituation({
     slug: String(f.slug ?? ""),
     title: String(f.title ?? ""),
     summary: String(f.summary ?? ""),
@@ -233,6 +233,11 @@ export function rowToSituation(row: QueryRow): Situation {
     updated_at: String(f.updated_at ?? ""),
     expires_at: String(f.expires_at ?? ""),
   });
+  return {
+    ...situation,
+    created_at: String(f.created_at ?? ""),
+    updated_at: String(f.updated_at ?? ""),
+  };
 }
 
 export async function findSituation(

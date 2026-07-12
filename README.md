@@ -1,6 +1,6 @@
-# fsituations
+# situations
 
-`fsituations` is a LastDB app for current operational posture: active
+`situations` is a LastDB app for current operational posture: active
 situations, phase/set breakdowns, scope, links, and agent-facing preflight
 policy.
 
@@ -8,7 +8,7 @@ It fills the gap between F-Brain and F-Kanban:
 
 - F-Brain stores durable rationale and decisions.
 - F-Kanban stores work items.
-- F-Situations stores current shared reality that agents must respect before
+- Situations stores current shared reality that agents must respect before
   mutating shared systems.
 
 ## Agent contract
@@ -16,7 +16,7 @@ It fills the gap between F-Brain and F-Kanban:
 Agents should check F-Situations before starting work:
 
 ```bash
-fsituations list --json
+situations list --json
 ```
 
 ## Install
@@ -27,17 +27,22 @@ Install the user PATH shim from this checkout:
 bun run install-shim
 ```
 
-The installer creates `~/.local/bin/fsituations` by default, or `~/bin` when
-that is the user bin directory already on PATH. Set `FSITUATIONS_INSTALL_BIN`
-to choose another directory.
+The installer creates `~/.local/bin/situations` by default, or `~/bin` when
+that is the user bin directory already on PATH. It also installs the
+`fsituations` compatibility alias during the migration. Set
+`FSITUATIONS_INSTALL_BIN` to choose another directory.
 
 If the shim is not installed but this checkout is available, use the fallback:
 
 ```bash
-bun --cwd /Users/tomtang/code/edgevector/fsituations src/cli.ts list --json
+bun --cwd /Users/tomtang/code/edgevector/situations src/cli.ts list --json
 ```
 
-If F-Situations is not initialized, agents may continue read-only local
+The old checkout path `/Users/tomtang/code/edgevector/fsituations` remains a
+compatibility symlink until the fleet reference sweep lands, so older agent
+fallback commands continue to run.
+
+If Situations is not initialized, agents may continue read-only local
 inspection, but must not mutate shared systems until the Situation check
 succeeds or Tom explicitly clears the action. Shared-system mutations include
 CI changes, routine or automation restarts, deployment/release-gate changes, PR
@@ -46,7 +51,7 @@ merge settings, and production/shared infrastructure changes.
 Before a shared-system mutation, run a scoped preflight:
 
 ```bash
-fsituations preflight --action enable-ci --repo EdgeVector/fold
+situations preflight --action enable-ci --repo EdgeVector/fold
 ```
 
 If preflight blocks the action or requires human clearance, stop and cite the
@@ -75,4 +80,6 @@ bun run src/cli.ts schema --json
 
 The schema follows the same published-out-of-band pattern as F-Kanban: the CLI
 does not register schemas itself. Publish/load the schema on the node, then run
-`init` so the CLI records the canonical hash in `~/.fsituations/config.json`.
+`init` so the CLI records the canonical hash in `~/.situations/config.json`.
+The CLI still reads `~/.fsituations/config.json` as a compatibility fallback,
+and the migration leaves `~/.fsituations` as a symlink to `~/.situations`.

@@ -48,21 +48,26 @@ export function resolveSocketPath(cfg?: { nodeSocketPath?: string }): string {
 }
 
 export function defaultConfigPath(): string {
+  const newOverride = process.env.SITUATIONS_CONFIG;
+  if (newOverride && newOverride.length > 0) return newOverride;
   const override = process.env.FSITUATIONS_CONFIG;
   if (override && override.length > 0) return override;
-  return join(homedir(), ".fsituations", "config.json");
+  const base = homedir();
+  const primary = join(base, ".situations", "config.json");
+  const compat = join(base, ".fsituations", "config.json");
+  return existsSync(primary) || !existsSync(compat) ? primary : compat;
 }
 
 export class ConfigMissingError extends Error {
   constructor(path: string) {
-    super(`Config not found at ${path}. Run \`fsituations init\` first.`);
+    super(`Config not found at ${path}. Run \`situations init\` first.`);
     this.name = "ConfigMissingError";
   }
 }
 
 export class ConfigInvalidError extends Error {
   constructor(path: string, reason: string) {
-    super(`Config at ${path} is invalid: ${reason}. Re-run \`fsituations init\`.`);
+    super(`Config at ${path} is invalid: ${reason}. Re-run \`situations init\`.`);
     this.name = "ConfigInvalidError";
   }
 }

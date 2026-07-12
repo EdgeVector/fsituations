@@ -1,5 +1,5 @@
 {
-  "display_name": "fsituations",
-  "description": "A LastDB app for active operational posture: situations, phases/sets, scope, links, and agent preflight policy under the fsituations/* schema namespace.",
-  "homepage_url": "https://github.com/EdgeVector/fsituations"
+  "display_name": "situations",
+  "description": "A LastDB app for active operational posture: situations, phases/sets, scope, links, and agent preflight policy. The existing fsituations/* schema namespace remains compatible.",
+  "homepage_url": "https://github.com/EdgeVector/situations"
 }

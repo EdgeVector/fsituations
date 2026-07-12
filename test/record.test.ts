@@ -108,5 +108,7 @@ describe("record mapping", () => {
     expect(restored.phases.map((phase) => phase.slug)).toEqual(["set-1", "set-2"]);
     expect(restored.current_phase).toBe("set-2");
     expect(restored.blocked_actions).toEqual(["enable-ci", "reenable-automation"]);
+    expect(restored.created_at).toBe(situation.created_at);
+    expect(restored.updated_at).toBe(situation.updated_at);
   });
 });

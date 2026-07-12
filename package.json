@@ -1,14 +1,16 @@
 {
-  "name": "fsituations",
+  "name": "situations",
   "version": "0.1.0",
   "description": "Situations app over LastDB: active operational posture, phases, and agent preflight policy.",
   "private": true,
   "license": "MIT",
   "type": "module",
   "bin": {
+    "situations": "src/cli.ts",
     "fsituations": "src/cli.ts"
   },
   "scripts": {
+    "situations": "bun src/cli.ts",
     "fsituations": "bun src/cli.ts",
     "install-shim": "sh scripts/install-shim.sh",
     "test": "bun test",

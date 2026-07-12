@@ -59,7 +59,7 @@ function usageFor(command: string): string {
 Options:
   --node-url <url>             node identity URL (default http://127.0.0.1:9001)
   --schema-service-url <url>   schema service URL kept for diagnostics
-  --node-socket-path <path>    unix socket path (default ~/.folddb/data/folddb.sock)
+  --node-socket-path <path>    unix socket path (default ~/.lastdb/data/folddb.sock)
   --user-hash <hash>           user hash; if omitted, asks node /api/auto_identity
   --schema-hash <hash>         canonical hash for fsituations/Situation
   --config <path>              write config path

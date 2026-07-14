@@ -79,6 +79,18 @@ situations notice --title "LastDB upgraded to 0.22.8" --kind upgrade \
 
 Or from JSON: `situations notice put examples/lastdb-upgrade-notice.json`.
 
+Prefer `last-stack-post-notice` (best-effort, never fails the caller) when
+Last Stack is installed.
+
+**Known producers (must post after the action):**
+
+| Producer | When |
+|---|---|
+| `lastdb-safe-upgrade` / `safe-upgrade-lastdb.sh` | GREEN live brew upgrade of lastdbd |
+| `last-stack-self-upgrade` | Fast-forward + setup succeeded |
+| `last-stack-install-apps` | App clone/link completed |
+| `cutover-to-mini.sh` | Mini cutover finished |
+
 Volume rules: only agent-impacting shared systems; one notice per action (not
 retry spam); not every PR merge.
 

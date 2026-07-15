@@ -140,7 +140,11 @@ export function newNodeClient(opts: {
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const socketPath = opts.socketPath;
 
-  const headers = (): Record<string, string> => ({ "X-User-Hash": opts.userHash });
+  const headers = (): Record<string, string> => ({
+    "X-User-Hash": opts.userHash,
+    // Best-effort Mini op-telemetry label (not a security boundary).
+    "X-LastDB-Client": "situations",
+  });
 
   // The SDK data-plane client. The transport carries X-User-Hash on every
   // request (the production node's HTTP server is stateless — identity comes

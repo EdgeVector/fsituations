@@ -24,6 +24,7 @@ import {
   activeSituations,
   listSituations,
   preflight,
+  rejectGlobalFleetScope,
   requireSituation,
   upsertSituation,
   type Situation,
@@ -99,10 +100,19 @@ LastDB Mini (POST /api/apps/declare-schema), missing schemas are declared
 locally and pinned — Situation and Notice. On older nodes without that route,
 publish/load from \`situations schema --json\`, then re-run init.`;
     case "put":
-      return `situations put <json-file|->
+      return `situations put <json-file|-> [--allow-global-scope]
 
 Creates or updates one situation. The JSON keys mirror the Situation record:
-slug, title, status, severity, scope_repos, phases, blocked_actions, etc.`;
+slug, title, status, severity, scope_repos, phases, blocked_actions, etc.
+
+Scope rules (Tom 2026-07-14 — global fleet kill switch ban):
+  - Do NOT set scope_routines / scope_automations to bare "*" for active
+    situations. That skip-fences the entire routines fleet (pickup, dogfood,
+    probes) and freezes shipping for unrelated incidents.
+  - Prefer empty scope + blocked_actions (action preflight), or narrow globs
+    (*dmg*, *cloud-sync*). See README "scope_routines is not a panic button".
+  - --allow-global-scope: override only when the issue is truly fleet-wide
+    (and after Discord needs-human). Default put REJECTS bare "*".`;
     case "list":
       return `situations list [--all] [--json] [--field <a,b,c>]
 
@@ -360,6 +370,7 @@ async function putCmd(rest: string[]): Promise<number> {
     options: {
       config: { type: "string" },
       json: { type: "boolean", default: false },
+      "allow-global-scope": { type: "boolean", default: false },
       help: { type: "boolean", short: "h" },
     },
     allowPositionals: true,
@@ -378,6 +389,7 @@ async function putCmd(rest: string[]): Promise<number> {
   }
   const body = file === "-" ? await new Response(Bun.stdin.stream()).text() : readFileSync(file, "utf8");
   const input = JSON.parse(body) as SituationInput;
+  rejectGlobalFleetScope(input, { allowGlobal: Boolean(parsed.values["allow-global-scope"]) });
   const { cfg, node } = loadCtx({ configPath: parsed.values.config });
   const result = await upsertSituation(node, cfg, input);
   if (parsed.values.json) {

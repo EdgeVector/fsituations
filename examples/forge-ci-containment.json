@@ -6,8 +6,8 @@
   "severity": "p0",
   "scope_systems": ["forgejo", "forge-ci", "release-automation"],
   "scope_repos": ["EdgeVector/fold"],
-  "scope_routines": ["*"],
-  "scope_automations": ["*"],
+  "scope_routines": [],
+  "scope_automations": [],
   "current_phase": "set-2",
   "phases": [
     {

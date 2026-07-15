@@ -83,6 +83,48 @@ export function validateSlug(slug: string): void {
   }
 }
 
+/**
+ * Reject bare `*` in scope_routines / scope_automations for active situations.
+ *
+ * A bare star is a global fleet kill switch: routinesd skip-fences every
+ * scheduled routine, which freezes kanban pickup / board pipeline for
+ * unrelated incidents. Prefer empty scope + blocked_actions (action preflight)
+ * or narrow globs (`*dmg*`, `*cloud-sync*`). Only allow with an explicit
+ * opt-in when the issue is truly fleet-wide.
+ */
+export function rejectGlobalFleetScope(
+  input: { status?: string; scope_routines?: unknown; scope_automations?: unknown },
+  opts: { allowGlobal?: boolean } = {},
+): void {
+  if (opts.allowGlobal) return;
+  const status = String(input.status ?? "active").toLowerCase();
+  // Resolved/expired records may keep historical * for audit; only active
+  // posture can fence the fleet.
+  if (status !== "active" && status !== "monitoring") return;
+
+  const bad: string[] = [];
+  for (const [field, raw] of [
+    ["scope_routines", input.scope_routines],
+    ["scope_automations", input.scope_automations],
+  ] as const) {
+    const list = normalizeList(raw);
+    if (list.some((g) => g === "*")) bad.push(field);
+  }
+  if (bad.length === 0) return;
+
+  throw new FsituationsError({
+    code: "global_fleet_scope_forbidden",
+    message:
+      `${bad.join(" and ")} contain bare "*" — that is a global fleet kill ` +
+      `switch (routinesd skip-fences every routine).`,
+    hint:
+      "Use blocked_actions / requires_human_clearance for the real hazard, " +
+      "or narrow globs (e.g. *cloud-sync*, *dmg*). Only if the issue is " +
+      "truly fleet-wide: `situations put --allow-global-scope <file>` " +
+      "(Tom-only; page Discord needs-human first).",
+  });
+}
+
 function normalizeList(value: unknown): string[] {
   const input = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
   const out: string[] = [];

@@ -22,6 +22,34 @@ It fills the gap between F-Brain and F-Kanban:
 
 ## Agent contract
 
+### 0. `scope_routines` is not a panic button (Tom 2026-07-14)
+
+**Do not set `scope_routines` / `scope_automations` to bare `"*"`** for active
+situations unless the issue is *truly* fleet-wide **and** Tom has been paged
+on Discord needs-human.
+
+| Field | Job |
+|-------|-----|
+| `blocked_actions` / `requires_human_clearance` | Stop the **dangerous action** (restore cloud_sync, re-enable CI, …) |
+| `scope_systems` / `scope_repos` | Scope **preflight** for agents touching those systems/repos |
+| `scope_routines` | Only routines whose **id** should be skip-fenced by routinesd |
+
+A bare `*` is a **global fleet kill switch**: routinesd skip-fences *every*
+scheduled routine (kanban pickup, dogfood, probes, …). That froze PR shipping
+during the 2026-07-14 cloud-sync memory incident even though the real hazard
+was only `reenable-cloud-sync` / restore of `cloud_sync.json`.
+
+**Right shape for a contained subsystem incident:**
+
+- `blocked_actions`: the few verbs that must not run
+- `scope_routines`: `[]` **or** narrow globs (`*dmg*`, `*cloud-sync*`)
+- `allowed_actions`: keep shipping (`open-pr`, `draft-fix`, …) when safe
+
+`situations put` **rejects** bare `*` on active/monitoring situations unless
+you pass `--allow-global-scope` (escape hatch only).
+
+Prior art: DMG deprecation used `["*dmg*", "*desktop*", "*fold-app*"]`, not `*`.
+
 ### 1. Posture (must respect)
 
 Agents should check Situations before starting work. Use the readable

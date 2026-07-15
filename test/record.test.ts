@@ -4,11 +4,13 @@ import {
   activeSituations,
   normalizeSituation,
   preflight,
+  rejectGlobalFleetScope,
   requireSituation,
   situationToFields,
   rowToSituation,
   type Situation,
 } from "../src/record.ts";
+import { FsituationsError } from "../src/client.ts";
 import type { NodeClient, QueryRow } from "../src/client.ts";
 import type { Config } from "../src/config.ts";
 
@@ -21,7 +23,8 @@ function baseSituation(overrides: Partial<Situation> = {}): Situation {
     severity: "p0",
     scope_repos: ["EdgeVector/fold"],
     scope_systems: ["forge-ci"],
-    scope_routines: ["*"],
+    // Prefer empty / narrow globs — bare "*" is a global fleet kill switch.
+    scope_routines: [],
     current_phase: "set-2",
     phases: [
       {
@@ -44,6 +47,47 @@ function baseSituation(overrides: Partial<Situation> = {}): Situation {
     ...overrides,
   });
 }
+
+describe("rejectGlobalFleetScope", () => {
+  test("rejects bare * in scope_routines for active situations", () => {
+    expect(() =>
+      rejectGlobalFleetScope({
+        status: "active",
+        scope_routines: ["*"],
+        scope_automations: [],
+      }),
+    ).toThrow(FsituationsError);
+  });
+
+  test("allows empty scope and narrow globs", () => {
+    expect(() =>
+      rejectGlobalFleetScope({
+        status: "active",
+        scope_routines: ["*dmg*", "*desktop*"],
+        scope_automations: [],
+      }),
+    ).not.toThrow();
+    expect(() =>
+      rejectGlobalFleetScope({
+        status: "active",
+        scope_routines: [],
+        scope_automations: [],
+      }),
+    ).not.toThrow();
+  });
+
+  test("allows bare * only with allowGlobal or non-active status", () => {
+    expect(() =>
+      rejectGlobalFleetScope(
+        { status: "active", scope_routines: ["*"] },
+        { allowGlobal: true },
+      ),
+    ).not.toThrow();
+    expect(() =>
+      rejectGlobalFleetScope({ status: "resolved", scope_routines: ["*"] }),
+    ).not.toThrow();
+  });
+});
 
 describe("preflight", () => {
   test("blocks matching active situations by action and repo scope", () => {

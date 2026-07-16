@@ -160,6 +160,21 @@ situations preflight --action enable-ci --repo EdgeVector/fold
 If preflight blocks the action or requires human clearance, stop and cite the
 Situation slug.
 
+## Observability
+
+The CLI initializes Sentry only when `OBS_SENTRY_DSN` is set. Without a DSN,
+startup and command behavior are unchanged. Unexpected top-level failures are
+reported with `service=situations-cli`; typed Situations/config errors keep
+their normal stderr and exit-code paths.
+
+Supported environment tags:
+
+```bash
+OBS_SENTRY_DSN=<resolved-at-launch>   # resolve from LastSecrets; do not commit raw DSNs
+OBS_SENTRY_ENVIRONMENT=dev            # optional
+OBS_SENTRY_RELEASE=situations@0.1.0   # optional; defaults to package version
+```
+
 ## Commands
 
 ```bash
@@ -172,11 +187,63 @@ bun run src/cli.ts list --field slug,status,severity
 bun run src/cli.ts notice --title "…" --kind upgrade --system lastdbd
 bun run src/cli.ts notices --since 30m
 bun run src/cli.ts preflight --action enable-ci --repo EdgeVector/fold
+bun run src/cli.ts publish-status --json
+bun run src/cli.ts deliver-status --dry-run --json
 ```
 
 `preflight` exits `0` when the action is allowed and `3` when an active
 situation blocks the action or requires human clearance. Notices never change
 preflight exit codes.
+
+## Admin posture+notices deliver (dogfood)
+
+`situations publish-status` / `situations deliver-status` close the gap between
+"situations data on Mini" and "admin can receive it over deliver", reusing the
+same `delivery_slice` / `lastdb.slice.v1` path as the kanban admin consumer
+(not a second transport).
+
+### What gets published (privacy-safe only)
+
+| Record | Key | Fields |
+|--------|-----|--------|
+| `fsituations/SituationAdminSnapshot` | `posture-latest` | captured_at, posture/notice counts + JSON bundles, schema_hashes_json |
+| `fsituations/SituationAdminPosture` | `<slug>` | slug, severity, status, summary, blocked_actions |
+| `fsituations/SituationAdminNotice` | `<slug>` | kind, at, title, summary, systems |
+
+Active/monitoring posture only. Notices default to `--since 24h` (not expired).
+Full `phases_json`, preflight message bodies, and secret material are never
+written to these slim schemas.
+
+### Dogfood command (stage → approve → mailbox)
+
+v1 **reuses the existing kanban-consumer identity** (deliver is schema-agnostic).
+Pass the enrolled admin consumer keys as env/flags — do not commit them:
+
+```bash
+export SITUATIONS_ADMIN_RECIPIENT_PUBKEY=...      # ed25519 from enroll-kanban-consumer
+export SITUATIONS_ADMIN_MESSAGING_PUBLIC_KEY=...  # x25519 messaging public key
+export SITUATIONS_ADMIN_MESSAGING_PSEUDONYM=...   # consumer messaging pseudonym
+# optional:
+export SITUATIONS_ADMIN_RECIPIENT_NAME=admin
+
+# 1) Publish slim records on Mini
+situations publish-status --json
+
+# 2) Stage a delivery (prints delivery_id + record counts; no send yet)
+situations deliver-status --max-records 50
+
+# 3) Approve to seal + send delivery_slice through Exemem
+situations deliver-status --approve --max-records 50
+
+# Dry-run without Mini writes / network stage:
+situations deliver-status --dry-run --json
+```
+
+Non-secret evidence to record after a successful `--approve` run: `delivery_id`,
+`shared` count, `message_type` (`delivery_slice`), the three schema hashes, and
+`posture`/`notices` row counts. Mailbox poll + `openDelivery` with the admin
+consumer private key lives in the admin SPA / consumer tooling (sibling card
+`admin-situations-tab`), not in this CLI.
 
 ## Schema
 

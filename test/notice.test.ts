@@ -57,6 +57,21 @@ describe("normalizeNotice", () => {
       "other",
     );
   });
+
+  test("normalizes list fields in the returned notice", () => {
+    const notice = normalizeNotice({
+      slug: "notice-test-lists",
+      title: "List cleanup",
+      scope_systems: [" lastdbd ", "lastdbd", "", "forgejo"],
+      scope_apps: [" brain ", "kanban", "brain"],
+      links_kanban: [" card-a ", "card-a", "card-b"],
+      links_brain: [" note-a ", "", "note-a"],
+    });
+    expect(notice.scope_systems).toEqual(["lastdbd", "forgejo"]);
+    expect(notice.scope_apps).toEqual(["brain", "kanban"]);
+    expect(notice.links_kanban).toEqual(["card-a", "card-b"]);
+    expect(notice.links_brain).toEqual(["note-a"]);
+  });
 });
 
 describe("parseSinceDuration", () => {
@@ -136,6 +151,19 @@ describe("record mapping", () => {
     expect(restored.scope_apps).toEqual(["brain", "kanban"]);
     expect(restored.actor).toBe("skill:lastdb-safe-upgrade");
     expect(restored.at).toBe(notice.at);
+  });
+
+  test("row mapping canonicalizes duplicate list values", () => {
+    const notice = baseNotice();
+    const fields = {
+      ...noticeToFields(notice),
+      scope_systems: [" lastdbd ", "lastdbd", "forgejo"],
+      links_brain: [" note-a ", "note-a"],
+    };
+    const row: QueryRow = { fields, key: { hash: notice.slug, range: null } };
+    const restored = rowToNotice(row);
+    expect(restored.scope_systems).toEqual(["lastdbd", "forgejo"]);
+    expect(restored.links_brain).toEqual(["note-a"]);
   });
 });
 

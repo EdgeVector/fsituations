@@ -140,15 +140,15 @@ export function normalizeNotice(input: NoticeInput, existing?: Notice): Notice {
     title: title.trim(),
     summary: (input.summary ?? existing?.summary ?? "").trim(),
     at,
-    scope_systems: input.scope_systems ?? existing?.scope_systems ?? [],
-    scope_apps: input.scope_apps ?? existing?.scope_apps ?? [],
+    scope_systems: normalizeList(input.scope_systems ?? existing?.scope_systems),
+    scope_apps: normalizeList(input.scope_apps ?? existing?.scope_apps),
     actor: (input.actor ?? existing?.actor ?? "").trim(),
     related_situation: (input.related_situation ?? existing?.related_situation ?? "").trim(),
     severity_hint: normalizeSeverityHint(input.severity_hint ?? existing?.severity_hint),
     expires_at: input.expires_at ?? existing?.expires_at ?? defaultExpiresAt(at),
     created_at: existing?.created_at ?? input.created_at ?? now,
-    links_kanban: input.links_kanban ?? existing?.links_kanban ?? [],
-    links_brain: input.links_brain ?? existing?.links_brain ?? [],
+    links_kanban: normalizeList(input.links_kanban ?? existing?.links_kanban),
+    links_brain: normalizeList(input.links_brain ?? existing?.links_brain),
   };
 }
 

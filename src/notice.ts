@@ -8,7 +8,7 @@ import {
   type NoticeSeverityHint,
 } from "./schemas.ts";
 import { nowIso, validateSlug } from "./record.ts";
-import { readIndexPayload, writeIndexPayload } from "./index-cache.ts";
+import { hasIndexSchema, readIndexPayload, writeIndexPayload } from "./index-cache.ts";
 
 const RECENT_NOTICES_INDEX_KEY = "recent_notices";
 // Covers the "situations notices --since 1h/2h/24h" hot path agents actually
@@ -257,9 +257,9 @@ function pruneNoticesForIndex(notices: Notice[], at: Date = new Date()): Notice[
 /**
  * Cheap default read for `situations notices` / the recent-notices banner:
  * point-reads the bounded `recent_notices` index row instead of scanning
- * every notice ever recorded. Falls back to one full scan (seeding the
- * index from it) when the requested window exceeds the index's retention,
- * `all` is requested, or the index hasn't been declared/seeded yet.
+ * every notice ever recorded. A declared-but-empty index is a valid fresh-node
+ * state and returns an empty list; `--all` and windows past the retention remain
+ * the explicit full-history scan paths.
  */
 export async function listNoticesIndexed(
   node: NodeClient,
@@ -274,6 +274,7 @@ export async function listNoticesIndexed(
   if (cached !== null) {
     return cached.map((n) => normalizeNotice(n)).sort(compareNotices);
   }
+  if (hasIndexSchema(cfg)) return [];
   const all = await listNotices(node, cfg);
   await rebuildNoticesIndex(node, cfg, all);
   return all;

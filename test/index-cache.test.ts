@@ -86,6 +86,16 @@ function makeNode(): {
 }
 
 describe("listActiveSituationsIndexed", () => {
+  test("fresh node with declared index returns empty without a full scan", async () => {
+    const cfg = baseConfig();
+    const { node, fullScans } = makeNode();
+
+    const active = await listActiveSituationsIndexed(node, cfg);
+
+    expect(active).toEqual([]);
+    expect(fullScans()).toBe(0);
+  });
+
   test("cold start does one full scan, seeds the index, then reads are point-reads", async () => {
     const cfg = baseConfig();
     const { node, fullScans } = makeNode();
@@ -157,6 +167,16 @@ describe("listActiveSituationsIndexed", () => {
 });
 
 describe("listNoticesIndexed", () => {
+  test("fresh node with declared index returns empty without a full scan", async () => {
+    const cfg = baseConfig();
+    const { node, fullScans } = makeNode();
+
+    const visible = await listNoticesIndexed(node, cfg, { since: "2h" });
+
+    expect(visible).toEqual([]);
+    expect(fullScans()).toBe(0);
+  });
+
   test("default --since window is a point read after the first seed", async () => {
     const cfg = baseConfig();
     const { node, fullScans } = makeNode();

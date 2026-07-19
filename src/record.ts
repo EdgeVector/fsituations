@@ -1,7 +1,7 @@
 import { FsituationsError, type NodeClient, type QueryRow } from "./client.ts";
 import { schemaHashFor, type Config } from "./config.ts";
 import { fieldsFor, SEVERITY_VALUES, STATUS_VALUES, type Severity, type SituationStatus } from "./schemas.ts";
-import { readIndexPayload, writeIndexPayload } from "./index-cache.ts";
+import { hasIndexSchema, readIndexPayload, writeIndexPayload } from "./index-cache.ts";
 
 const ACTIVE_SITUATIONS_INDEX_KEY = "active_situations";
 
@@ -335,9 +335,8 @@ export async function listSituations(node: NodeClient, cfg: Config): Promise<Sit
 /**
  * Cheap default read for preflight and `list`/`notices`: point-reads the
  * `active_situations` index row instead of scanning every Situation ever
- * filed. Falls back to one full scan (and seeds the index from it) when the
- * index hasn't been declared/seeded yet — every call after that is a point
- * read again.
+ * filed. A declared-but-empty index is a valid fresh-node state and returns an
+ * empty list; `--all` remains the explicit full-history scan path.
  */
 export async function listActiveSituationsIndexed(
   node: NodeClient,
@@ -349,6 +348,7 @@ export async function listActiveSituationsIndexed(
     const restored = cached.map((s) => normalizeSituation(s, undefined, { touchUpdatedAt: false }));
     return activeSituations(restored, at).sort(compareSituations);
   }
+  if (hasIndexSchema(cfg)) return [];
   const all = await listSituations(node, cfg);
   await rebuildSituationsIndex(node, cfg, all);
   return activeSituations(all, at);

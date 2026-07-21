@@ -109,8 +109,9 @@ Options:
 
 If hashes are omitted, init asks the node for loaded fsituations schemas. On
 LastDB Mini (POST /api/apps/declare-schema), missing schemas are declared
-locally and pinned — Situation and Notice. On older nodes without that route,
-publish/load from \`situations schema --json\`, then re-run init.`;
+through Mini's Schema Service-backed path and the catalog identities are pinned.
+On older nodes without that route, register/load payloads from
+\`situations schema --json\`, then re-run init.`;
     case "put":
       return `situations put <json-file|-> [--allow-global-scope]
 

@@ -12,8 +12,8 @@
 //   - `GET /api/system/auto-identity` — resolve/provision the local owner hash.
 //   - `GET /api/schemas`              — list loaded schemas so `init` can pin
 //                                       the canonical fsituations/Situation hash.
-//   - `POST /api/apps/declare-schema` — Mini first-run local mint (same path as
-//                                       brain/kanban init).
+//   - `POST /api/apps/declare-schema` — Mini first-run orchestration for
+//                                       Schema Service registration/resolution.
 // Both are node-owner endpoints (no capability, no app scope), so they stay on
 // the raw fetch-over-UDS path below.
 

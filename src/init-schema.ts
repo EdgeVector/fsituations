@@ -20,8 +20,9 @@ const TARGETS: SchemaTarget[] = [
 ];
 
 /**
- * Prefer already-loaded schemas; otherwise local-declare on Mini
- * via POST /api/apps/declare-schema (same first-run path as brain/kanban).
+ * Prefer already-loaded registered schemas; otherwise ask Mini to resolve or
+ * register them with Schema Service via POST /api/apps/declare-schema (the
+ * same first-run path as brain/kanban). There is no local-only fallback.
  * Returns a map of record-type → canonical hash for config pin.
  */
 export async function resolveOrDeclareSchemaHashes(
@@ -42,7 +43,7 @@ export async function resolveOrDeclareSchemaHashes(
       );
       if (!opts.quiet) {
         console.log(
-          `declared ${declared.schema} → ${declared.canonical}  (${declared.resolution})`,
+          `registered ${declared.schema} → ${declared.canonical}  (${declared.resolution})`,
         );
       }
       hashes[target.key] = declared.canonical;

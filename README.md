@@ -269,11 +269,11 @@ bun run src/cli.ts schema --type notice
 ```
 
 On LastDB Mini (and other nodes with `POST /api/apps/declare-schema`), bare
-`situations init` declares both schemas locally and writes the canonical hashes
-to `~/.situations/config.json` — same first-run path as brain/kanban. You can
-still pass `--schema-hash` / `--notice-schema-hash` to pin pre-published
-schemas, or load payloads from `situations schema` on older nodes that lack
-declare-schema.
+`situations init` asks Mini to resolve/register both schemas with Schema Service
+and writes the catalog hashes to `~/.situations/config.json` — the same
+first-run path as brain/kanban. You can still pass `--schema-hash` /
+`--notice-schema-hash` to pin already registered schemas, or register/load
+payloads from `situations schema` on older nodes that lack declare-schema.
 
 The CLI still reads `~/.fsituations/config.json` as a compatibility fallback,
 and the migration leaves `~/.fsituations` as a symlink to `~/.situations`.

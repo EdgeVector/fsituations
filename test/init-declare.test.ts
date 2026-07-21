@@ -90,7 +90,7 @@ describe("resolveOrDeclareSituationHash", () => {
     expect(declared).toBe(0);
   });
 
-  test("declares locally when nothing is loaded", async () => {
+  test("asks Mini to register when nothing is loaded", async () => {
     const declaredNames: string[] = [];
     const node = mockNode({
       listSchemas: async () => [],

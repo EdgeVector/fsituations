@@ -1,0 +1,10 @@
+{
+  "artifacts": [
+    {
+      "app": "situations",
+      "paths": [
+        "dist"
+      ]
+    }
+  ]
+}

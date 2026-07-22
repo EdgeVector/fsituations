@@ -2,7 +2,8 @@
 
 import { parseArgs } from "node:util";
 import { existsSync, realpathSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import pkg from "../package.json" with { type: "json" };
 import { FsituationsError, newNodeClient } from "./client.ts";
@@ -341,14 +342,20 @@ function whichCmd(rest: string[]): number {
     return 0;
   }
 
-  const sourcePath = realpathSync(new URL(import.meta.url));
-  const checkoutRoot = resolve(dirname(sourcePath), "..");
-  const expectedRootRaw = resolve(Bun.env.HOME ?? "", ".host-track", "situations");
-  const expectedRoot = existsSync(expectedRootRaw) ? realpathSync(expectedRootRaw) : expectedRootRaw;
+  const importMetaPath = fileURLToPath(import.meta.url);
+  const isSourceFile = !importMetaPath.includes("/$bunfs/") && existsSync(importMetaPath);
+  const executablePath = isSourceFile
+    ? executableRealpath(process.argv[1], Bun.env._, importMetaPath)
+    : realpathOrSelf(process.execPath);
+  const sourcePath = isSourceFile ? realpathOrSelf(importMetaPath) : executablePath;
+  const checkoutRoot = artifactOrSourceRoot(sourcePath);
+  const expectedRootRaw = resolve(Bun.env.HOME ?? "", ".host-track", "apps", "situations");
+  const expectedRoot = existsSync(expectedRootRaw) ? realpathOrSelf(expectedRootRaw) : expectedRootRaw;
   const inHostTrack = checkoutRoot === expectedRoot || checkoutRoot.startsWith(`${expectedRoot}/`);
   const result = {
     app: "situations",
-    command: "situations",
+    command: commandName(isSourceFile ? process.argv[1] ?? "situations" : executablePath),
+    executable_path: executablePath,
     source_path: sourcePath,
     checkout_root: checkoutRoot,
     expected_host_track: expectedRoot,
@@ -365,6 +372,34 @@ function whichCmd(rest: string[]): number {
   }
 
   return parsed.values.check && !inHostTrack ? 1 : 0;
+}
+
+function artifactOrSourceRoot(sourcePath: string): string {
+  if (sourcePath.endsWith("/src/cli.ts")) return resolve(dirname(sourcePath), "..");
+  if (dirname(sourcePath).endsWith("/dist")) return resolve(dirname(sourcePath), "..");
+  return dirname(sourcePath);
+}
+
+function realpathOrSelf(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+}
+
+function executableRealpath(...candidates: Array<string | undefined>): string {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const path = candidate.startsWith("/") ? candidate : resolve(process.cwd(), candidate);
+    if (existsSync(path)) return realpathOrSelf(path);
+  }
+  return candidates.find((candidate): candidate is string => Boolean(candidate)) ?? "";
+}
+
+function commandName(path: string): string {
+  const name = basename(path);
+  return name === "cli.ts" ? "situations" : name;
 }
 
 async function initCliSentry(): Promise<CaptureSentryException> {

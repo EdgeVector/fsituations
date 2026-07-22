@@ -5,11 +5,18 @@ cd "$(dirname "$0")/.."
 shopt -s nullglob 2>/dev/null || true
 
 echo "== shell syntax =="
-for f in .lastgit/*.sh scripts/*.sh; do
+for f in .lastgit/*.sh bin/* scripts/*.sh; do
   [ -e "$f" ] || continue
-  echo "bash -n $f"
-  bash -n "$f"
+  case "$f" in
+    *.sh|bin/situations|bin/fsituations)
+      echo "bash -n $f"
+      bash -n "$f"
+      ;;
+  esac
 done
+
+echo "== dependencies =="
+bun install --frozen-lockfile
 
 echo "== typecheck / build =="
 for f in src/*.ts test/*.ts; do
@@ -17,6 +24,10 @@ for f in src/*.ts test/*.ts; do
   echo "bun build $f"
   bun build "$f" --target=bun --outfile=/dev/null
 done
+bun run typecheck
+
+echo "== artifact build =="
+bun run build
 
 echo "== unit tests =="
 bun test

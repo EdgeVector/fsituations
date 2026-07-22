@@ -10,6 +10,7 @@
     "fsituations": "src/cli.ts"
   },
   "scripts": {
+    "build": "bash scripts/build-artifact.sh",
     "situations": "bun src/cli.ts",
     "fsituations": "bun src/cli.ts",
     "install-shim": "sh scripts/install-shim.sh",
